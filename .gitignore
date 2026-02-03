@@ -1,0 +1,27 @@
+## Extensions
+## End Extensions
+
+
+## Files
+## End Files
+
+
+## Directories
+.devcontainer/
+.vscode/
+
+.artifact/
+.build/
+.dist/
+
+artifact/
+build/
+dist/
+
+input/
+## End Directories
+
+
+## Un-Ignore
+!.gitkeep
+## End Un-Ignore

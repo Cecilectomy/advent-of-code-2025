@@ -7,7 +7,7 @@ uint64_t max_joltage(std::string bank, int count);
 int main(int argc, char **argv)
 {
     std::filesystem::path path(argc <= 1 ? "input/day3.txt" : argv[1]);
-    if(!std::filesystem::exists(path))
+    if (!std::filesystem::exists(path))
     {
         std::cout << "File does not exist: " << path << std::endl;
         return 1;
@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     std::ifstream input(path);
 
     uint64_t result[2] = {0, 0};
-    
+
     std::string line;
     while (std::getline(input, line))
     {

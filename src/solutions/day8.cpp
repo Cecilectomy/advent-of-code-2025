@@ -8,13 +8,13 @@
 #include "common/vector3.hpp"
 
 typedef math::Vector3l Junction;
-typedef std::pair<Junction*, Junction*> Connection;
-typedef std::set<Junction*> Circuit;
+typedef std::pair<Junction *, Junction *> Connection;
+typedef std::set<Junction *> Circuit;
 
 int main(int argc, char **argv)
 {
     std::filesystem::path path(argc <= 1 ? "input/day8.txt" : argv[1]);
-    if(!std::filesystem::exists(path))
+    if (!std::filesystem::exists(path))
     {
         std::cout << "File does not exist: " << path << std::endl;
         return 1;
@@ -47,20 +47,20 @@ int main(int argc, char **argv)
         }
     }
 
-    std::sort(connections.begin(), connections.end(), [](const Connection& a, const Connection& b) {
+    std::sort(connections.begin(), connections.end(), [](const Connection &a, const Connection &b) {
         return a.first->distanceSq(*a.second) < b.first->distanceSq(*b.second);
     });
-    
-    for(int i = 0; i < connections.size(); i++)
+
+    for (int i = 0; i < connections.size(); i++)
     {
-        if(i >= limit && !result[0])
+        if (i >= limit && !result[0])
         {
-            std::sort(circuits.begin(), circuits.end(), [](const Circuit& a, const Circuit& b) {
+            std::sort(circuits.begin(), circuits.end(), [](const Circuit &a, const Circuit &b) {
                 return a.size() > b.size();
             });
 
             result[0] = 1;
-            for(int c = 0; c < 3 && c < circuits.size(); c++)
+            for (int c = 0; c < 3 && c < circuits.size(); c++)
             {
                 result[0] *= circuits[c].size();
             }
@@ -68,10 +68,10 @@ int main(int argc, char **argv)
 
         auto con = connections[i];
 
-        Circuit* a = nullptr;
-        Circuit* b = nullptr;
+        Circuit *a = nullptr;
+        Circuit *b = nullptr;
 
-        for(auto &c : circuits)
+        for (auto &c : circuits)
         {
             a = c.find(con.first) != c.end() ? &c : a;
             b = c.find(con.second) != c.end() ? &c : b;
@@ -84,12 +84,12 @@ int main(int argc, char **argv)
             }
         }
 
-        if(!b && !a) circuits.emplace_back(Circuit{con.first, con.second});
+        if (!b && !a) circuits.emplace_back(Circuit{con.first, con.second});
         else if ((a && b) || a == b) continue;
         else if (a) a->insert(con.second);
         else if (b) b->insert(con.first);
 
-        if(circuits.size() == 1 && circuits[0].size() == junctions.size())
+        if (circuits.size() == 1 && circuits[0].size() == junctions.size())
         {
             result[1] = con.first->x * con.second->x;
             break;

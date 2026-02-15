@@ -6,7 +6,7 @@
 int main(int argc, char **argv)
 {
     std::filesystem::path path(argc <= 1 ? "input/day5.txt" : argv[1]);
-    if(!std::filesystem::exists(path))
+    if (!std::filesystem::exists(path))
     {
         std::cout << "File does not exist: " << path << std::endl;
         return 1;
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
             }
         }
     }
-    
+
     input.close();
 
     for (auto range : fresh)

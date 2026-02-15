@@ -7,4 +7,4 @@ clean:
 .PHONY: build
 build:
 	@mkdir -p ./.build
-	g++ -Isrc src/solutions/day$(DAY).cpp -o .build/day$(DAY)
+	g++ -std=c++20 -Isrc src/solutions/day$(DAY).cpp -o .build/day$(DAY)

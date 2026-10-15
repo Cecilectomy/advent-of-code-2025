@@ -5,27 +5,60 @@
 namespace math
 {
     template <typename T>
+    using Point = Vector2<T>;
+
+    template <typename T>
     struct Line
     {
-        static_assert(std::is_arithmetic<T>::value, "T must be numeric");
+        static_assert(std::is_arithmetic<T>::value, "T must be a numeric type");
 
-        Vector2<T> a;
-        Vector2<T> b;
+        Point<T> a;
+        Point<T> b;
+
+        int8_t winding(const Point<T> &c) const
+        {
+            int64_t val = ((b.y - a.y) * (c.x - b.x)) - ((b.x - a.x) * (c.y - b.y));
+            return (val > 0 ? 1 : (val < 0 ? - 1 : 0));
+        }
+
+        bool bounds_contains(const Point<T> &p) const
+        {
+            return (
+                std::min(a.x, b.x) <= p.x <= std::max(a.x, b.x)
+                && std::min(a.y, b.y) <= p.y <= std::max(a.y, b.y)
+            );
+        }
 
         bool intersects(const Line<T> &l) const
         {
-            // Todo: Replace with actual line intersection formula (this only works for axis aligned perpendicular lines)
-            return (
-                (a.x == b.x && l.a.y == l.b.y && l.a.x <= a.x && l.b.x >= a.x && l.a.y >= a.y && l.a.y <= b.y) ||
-                (a.y == b.y && l.a.x == l.b.x && l.a.y <= a.y && l.b.y >= a.y && l.a.x >= a.x && l.a.x <= b.x)
-            );
+            if (
+                std::max(a.x, b.x) < std::min(l.a.x, l.b.x)
+                || std::max(l.a.x, l.b.x) < std::min(a.x, b.x)
+                || std::max(a.y, b.y) < std::min(l.a.y, l.b.y)
+                || std::max(l.a.y, l.b.y) < std::min(a.y, b.y)
+            )
+            {
+                return false;
+            }
+
+            int64_t o1 = winding(l.a);
+            int64_t o2 = winding(l.b);
+            int64_t o3 = l.winding(a);
+            int64_t o4 = l.winding(b);
+
+            if (o1 != o2 && o3 != o4)
+            {
+                return true;
+            }
+
+            if (o1 == 0 && bounds_contains(l.a)) return true;
+            if (o2 == 0 && bounds_contains(l.b)) return true;
+            if (o3 == 0 && l.bounds_contains(a)) return true;
+            if (o4 == 0 && l.bounds_contains(b)) return true;
+
+            return false;
         }
     };
-
-    typedef Line<float> Linef;
-    typedef Line<double> Lined;
-    typedef Line<int32_t> Linei;
-    typedef Line<int64_t> Linel;
 
     template <typename T>
     struct AABB : public Line<T>
@@ -44,9 +77,4 @@ namespace math
             );
         }
     };
-
-    typedef AABB<float> AABBf;
-    typedef AABB<double> AABBd;
-    typedef AABB<int32_t> AABBi;
-    typedef AABB<int64_t> AABBl;
 }

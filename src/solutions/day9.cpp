@@ -5,9 +5,9 @@
 
 #include "common/line.hpp"
 
-typedef math::Vector2l Point;
-typedef math::Linel Line;
-typedef math::AABBl AABB;
+using Point = math::Point<int64_t>;
+using Line = math::Line<int64_t>;
+using AABB = math::AABB<int64_t>;
 
 int main(int argc, char **argv)
 {
@@ -46,10 +46,7 @@ int main(int argc, char **argv)
 
     lines.back().b = lines.front().a;
 
-    shoelace.x += (lines.back().a.x * lines.back().b.y);
-    shoelace.y += (lines.back().a.y * lines.back().b.x);
-
-    char winding = ((shoelace.x - shoelace.y) / 2) > 0 ? -1 : 1;
+    int8_t winding = (shoelace.x - shoelace.y) > 0 ? -1 : 1;
 
     for (int i = 0; i < lines.size(); i++)
     {

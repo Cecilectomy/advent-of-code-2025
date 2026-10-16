@@ -8,7 +8,11 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
+
+using SequenceCache = std::unordered_map<uint64_t, std::vector<uint64_t>>;
+using JoltageCache = std::map<std::vector<uint64_t>, uint64_t>;
 
 struct Joltage
 {
@@ -25,6 +29,9 @@ struct Machine
     std::vector<uint64_t> buttons;
     Joltage joltage;
     uint64_t lights = 0;
+
+    SequenceCache sequence_cache;
+    JoltageCache joltage_cache;
 
     std::vector<uint64_t> sequences(uint64_t parity);
     
@@ -67,7 +74,9 @@ void Joltage::calculate()
     mask = 0x0;
     parity = 0x0;
 
-    for(size_t j = 0; j < required.size(); j++)
+    size_t count = required.size();
+
+    for(size_t j = 0; j < count; j++)
     {
         if(required[j] > 0) mask |= (1ULL << j);
         if(required[j] % 2) parity |= (1ULL << j);
@@ -76,24 +85,30 @@ void Joltage::calculate()
 
 std::vector<uint64_t> Machine::sequences(uint64_t parity)
 {
+    SequenceCache::iterator cache_it = sequence_cache.find(parity);
+    if(cache_it != sequence_cache.end()) return cache_it->second;
+
     std::unordered_set<uint64_t> valid;
 
-    for (uint64_t sequence = 0; sequence < (1ULL << buttons.size()); sequence++)
+    size_t button_count = buttons.size();
+    uint64_t max_sequences = (1ULL << button_count);
+
+    for (uint64_t s = 0; s < max_sequences; s++)
     {
         uint64_t state = 0x0;
         
-        for(size_t b = 0; b < buttons.size(); b++)
+        for(size_t b = 0; b < button_count; b++)
         {
-            if((sequence & (1ULL << b)))
+            if((s & (1ULL << b)))
             {
                 state ^= buttons[b];
             }
         }
 
-        if(state == parity) valid.emplace(sequence);
+        if(state == parity) valid.emplace(s);
     }
 
-    return std::vector<uint64_t>(valid.begin(), valid.end());
+    return sequence_cache[parity] = std::vector<uint64_t>(valid.begin(), valid.end());
 }
 
 uint64_t Machine::initialize()
@@ -115,8 +130,14 @@ uint64_t Machine::energize()
     joltage.calculate();
 
     if(!joltage.mask) return 0;
+    
+    JoltageCache::iterator cache_it = joltage_cache.find(joltage.required);
+    if(cache_it != joltage_cache.end()) return cache_it->second;
 
     uint64_t min_presses = UINT64_MAX;
+
+    size_t btns_count = buttons.size();
+    size_t jreq_count = joltage.required.size();
 
     std::vector<uint64_t> sequences = this->sequences(joltage.parity);
 
@@ -125,13 +146,13 @@ uint64_t Machine::energize()
         std::vector<uint64_t> sequence_values(joltage.required.size(), 0);
         uint64_t pressed = 0;
 
-        for (size_t b = 0; b < buttons.size(); b++)
+        for (size_t b = 0; b < btns_count; b++)
         {
             if ((sequence & (1ULL << b)))
             {
                 pressed++;
 
-                for (size_t j = 0; j < joltage.required.size(); j++)
+                for (size_t j = 0; j < jreq_count; j++)
                 {
                     sequence_values[j] += (buttons[b] & (1ULL << j)) ? 1 : 0;
                 }
@@ -139,25 +160,34 @@ uint64_t Machine::energize()
         }
 
         bool valid = true;
-        Machine next_machine = (*this);
 
-        for (size_t j = 0; j < next_machine.joltage.required.size(); ++j) {
-            if (sequence_values[j] > next_machine.joltage.required[j]) {
+        for (size_t j = 0; j < jreq_count; ++j) {
+            if (sequence_values[j] > joltage.required[j]) {
                 valid = false;
                 break;
             }
-
-            next_machine.joltage.required[j] = (next_machine.joltage.required[j] - sequence_values[j]) / 2;
         }
 
         if (!valid) continue;
 
-        uint64_t cost = next_machine.energize();
+        uint64_t rollback_mask = joltage.mask;
+        uint64_t rollback_parity = joltage.parity;
+        std::vector<uint64_t> rollback_required = joltage.required;
+
+        for (size_t j = 0; j < jreq_count; ++j) {
+            joltage.required[j] = (joltage.required[j] - sequence_values[j]) / 2;
+        }
+
+        uint64_t cost = energize();
+
+        joltage.mask = rollback_mask;
+        joltage.parity = rollback_parity;
+        joltage.required = rollback_required;
 
         min_presses = (cost != UINT64_MAX) ? std::min(min_presses, pressed + 2 * cost) : min_presses;
     }
 
-    return min_presses;
+    return joltage_cache[joltage.required] = min_presses;
 }
 
 Machine Machine::create(std::string diagram)

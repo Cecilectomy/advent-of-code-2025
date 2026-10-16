@@ -37,6 +37,8 @@ int main(int argc, char **argv)
         server.processDevice(line);
     }
 
+    input.close();
+
     server.path_cache.clear();
     result[0] = server.countPaths(
         server.getDeviceID("you"),
@@ -50,8 +52,6 @@ int main(int argc, char **argv)
         server.getDeviceID("dac"),
         server.getDeviceID("fft")
     );
-
-    input.close();
 
     std::cout << "Part 1: " << result[0] << "\n";
     std::cout << "Part 2: " << result[1] << "\n";
